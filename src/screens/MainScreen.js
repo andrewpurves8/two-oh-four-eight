@@ -1,9 +1,10 @@
 import React, { Component } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import GestureRecognizer from "react-native-swipe-gestures";
 
 import Colors from "../components/Colors";
 import Tile from "../components/Tile";
+import BlankTile from "../components/BlankTile";
 
 import _ from "lodash";
 
@@ -18,6 +19,7 @@ class MainScreen extends Component {
       [0, 0, 0, 0],
     ],
     nonZeroTiles: [],
+    score: 0,
   };
 
   constructor(props) {
@@ -83,41 +85,56 @@ class MainScreen extends Component {
     return false;
   }
 
-  postUpdate(newValues, oldValues, nonZeroTiles) {
+  postUpdate(newValues, oldValues, nonZeroTiles, score) {
     if (JSON.stringify(newValues) != JSON.stringify(oldValues)) {
-      this.checkGameWon(newValues);
+      const gameWon = this.checkGameWon(newValues);
       this.addTile(newValues, nonZeroTiles);
-      this.checkGameLost(newValues);
+      const gameLost = this.checkGameLost(newValues);
+      if (gameWon) {
+        console.log("Game won!");
+      } else if (gameLost) {
+        console.log("Game lost!");
+      }
       this.setState({
         ...this.state,
         values: newValues,
         nonZeroTiles: nonZeroTiles,
+        score: score,
       });
     }
   }
 
-  onSwipeUp(gestureState) {
-    // let newValues = _.cloneDeep(this.state.values);
-    // for (let i = 0; i < 4; i++) {
-    //   for (let j = 0; j < 3; j++) {
-    //     this.shiftUp(newValues, i);
-    //     if (newValues[j][i] === newValues[j + 1][i]) {
-    //       newValues[j][i] *= 2;
-    //       newValues[j + 1][i] = 0;
-    //     }
-    //   }
-    // }
-    // this.postUpdate(newValues, this.state.values);
-
-    let newValues = _.cloneDeep(this.state.values);
-    let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
-
-    for (let i = 0; i < newNonZeroTiles.length; i++) {
-      let tile = newNonZeroTiles[i];
+  preUpdate(nonZeroTiles) {
+    for (let i = 0; i < nonZeroTiles.length; i++) {
+      let tile = nonZeroTiles[i];
       tile.row = tile.newRow;
       tile.col = tile.newCol;
       tile.isNew = false;
     }
+  }
+
+  onSwipe(gestureName, gestureState) {
+    console.log(gestureState);
+    const { vx, vy, dx, dy } = gestureState;
+    const dxAbs = Math.abs(dx);
+    const dyAbs = Math.abs(dy);
+    const vxAbs = Math.abs(vx);
+    const vyAbs = Math.abs(vy);
+    if (vxAbs > vyAbs && vxAbs > 0.05) {
+      if (dyAbs === 0 || dx / dyAbs > 2) this.onSwipeRight();
+      else if (dyAbs === 0 || dx / dyAbs < -2) this.onSwipeLeft();
+    } else if (vyAbs > vxAbs && vyAbs > 0.05) {
+      if (dxAbs === 0 || dy / dxAbs > 2) this.onSwipeDown();
+      else if (dxAbs === 0 || dy / dxAbs < -2) this.onSwipeUp();
+    }
+  }
+
+  onSwipeUp() {
+    let newValues = _.cloneDeep(this.state.values);
+    let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
+    let newScore = this.state.score;
+
+    this.preUpdate(newNonZeroTiles);
 
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 3; j++) {
@@ -125,6 +142,8 @@ class MainScreen extends Component {
         if (newValues[j][i] !== 0 && newValues[j][i] === newValues[j + 1][i]) {
           newValues[j][i] *= 2;
           newValues[j + 1][i] = 0;
+          newScore = newValues[j][i];
+
           let topTile, bottomTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
             if (newNonZeroTiles[k].index === 4 * (j + 1) + i) {
@@ -134,7 +153,7 @@ class MainScreen extends Component {
             }
           }
           if (typeof bottomTile != "undefined") {
-            bottomTile.index = 4 * i + j;
+            bottomTile.index = 4 * j + i;
             bottomTile.value *= 2;
             bottomTile.newRow = j;
           }
@@ -143,31 +162,15 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles);
+    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
   }
 
-  onSwipeDown(gestureState) {
-    // let newValues = _.cloneDeep(this.state.values);
-    // for (let i = 0; i < 4; i++) {
-    //   for (let j = 3; j > 0; j--) {
-    //     this.shiftDown(newValues, i);
-    //     if (newValues[j][i] === newValues[j - 1][i]) {
-    //       newValues[j][i] *= 2;
-    //       newValues[j - 1][i] = 0;
-    //     }
-    //   }
-    // }
-    // this.postUpdate(newValues, this.state.values);
-
+  onSwipeDown() {
     let newValues = _.cloneDeep(this.state.values);
     let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
+    let newScore = this.state.score;
 
-    for (let i = 0; i < newNonZeroTiles.length; i++) {
-      let tile = newNonZeroTiles[i];
-      tile.row = tile.newRow;
-      tile.col = tile.newCol;
-      tile.isNew = false;
-    }
+    this.preUpdate(newNonZeroTiles);
 
     for (let i = 0; i < 4; i++) {
       for (let j = 3; j > 0; j--) {
@@ -175,6 +178,8 @@ class MainScreen extends Component {
         if (newValues[j][i] !== 0 && newValues[j][i] === newValues[j - 1][i]) {
           newValues[j][i] *= 2;
           newValues[j - 1][i] = 0;
+          newScore = newValues[j][i];
+
           let topTile, bottomTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
             if (newNonZeroTiles[k].index === 4 * (j - 1) + i) {
@@ -193,31 +198,15 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles);
+    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
   }
 
-  onSwipeLeft(gestureState) {
-    // let newValues = _.cloneDeep(this.state.values);
-    // for (let i = 0; i < 4; i++) {
-    //   for (let j = 0; j < 3; j++) {
-    //     this.shiftLeft(newValues, i);
-    //     if (newValues[i][j] === newValues[i][j + 1]) {
-    //       newValues[i][j] *= 2;
-    //       newValues[i][j + 1] = 0;
-    //     }
-    //   }
-    // }
-    // this.postUpdate(newValues, this.state.values);
-
+  onSwipeLeft() {
     let newValues = _.cloneDeep(this.state.values);
     let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
+    let newScore = this.state.score;
 
-    for (let i = 0; i < newNonZeroTiles.length; i++) {
-      let tile = newNonZeroTiles[i];
-      tile.row = tile.newRow;
-      tile.col = tile.newCol;
-      tile.isNew = false;
-    }
+    this.preUpdate(newNonZeroTiles);
 
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 3; j++) {
@@ -225,6 +214,8 @@ class MainScreen extends Component {
         if (newValues[i][j] !== 0 && newValues[i][j] === newValues[i][j + 1]) {
           newValues[i][j] *= 2;
           newValues[i][j + 1] = 0;
+          newScore = newValues[i][j];
+
           let leftTile, rightTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
             if (newNonZeroTiles[k].index === 4 * i + j + 1) {
@@ -243,19 +234,15 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles);
+    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
   }
 
-  onSwipeRight(gestureState) {
+  onSwipeRight() {
     let newValues = _.cloneDeep(this.state.values);
     let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
+    let newScore = this.state.score;
 
-    for (let i = 0; i < newNonZeroTiles.length; i++) {
-      let tile = newNonZeroTiles[i];
-      tile.row = tile.newRow;
-      tile.col = tile.newCol;
-      tile.isNew = false;
-    }
+    this.preUpdate(newNonZeroTiles);
 
     for (let i = 0; i < 4; i++) {
       for (let j = 3; j > 0; j--) {
@@ -263,6 +250,8 @@ class MainScreen extends Component {
         if (newValues[i][j] !== 0 && newValues[i][j] === newValues[i][j - 1]) {
           newValues[i][j] *= 2;
           newValues[i][j - 1] = 0;
+          newScore = newValues[i][j];
+
           let leftTile, rightTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
             if (newNonZeroTiles[k].index === 4 * i + j - 1) {
@@ -281,7 +270,7 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles);
+    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
   }
 
   shiftUp(values, column, nonZeroTiles) {
@@ -392,15 +381,32 @@ class MainScreen extends Component {
 
     return (
       <GestureRecognizer
-        onSwipeUp={(state) => this.onSwipeUp(state)}
-        onSwipeDown={(state) => this.onSwipeDown(state)}
-        onSwipeLeft={(state) => this.onSwipeLeft(state)}
-        onSwipeRight={(state) => this.onSwipeRight(state)}
+        onSwipe={(gestureName, gestureState) =>
+          this.onSwipe(gestureName, gestureState)
+        }
         config={config}
         style={styles.gestureRecognizer}
       >
         <View style={styles.container}>
-          <View style={styles.gameArea}>{this.createTiles()}</View>
+          <View style={styles.topHalf}>
+            <View style={styles.title}>
+              <Text style={styles.titleText}>2048</Text>
+            </View>
+            <View style={styles.scores}>
+              <View style={{ ...styles.scoreBox, width: 75 }}>
+                <Text style={styles.scoreLabel}>SCORE</Text>
+                <Text style={styles.scoreValue}>{this.state.score}</Text>
+              </View>
+              <View style={{ width: 10 }} />
+              <View style={{ ...styles.scoreBox, width: 90 }}>
+                <Text style={styles.scoreLabel}>HIGH SCORE</Text>
+                <Text style={styles.scoreValue}>123456</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.bottomHalf}>
+            <View style={styles.gameArea}>{this.createTiles()}</View>
+          </View>
         </View>
       </GestureRecognizer>
     );
@@ -411,7 +417,7 @@ class MainScreen extends Component {
 
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {
-        tiles.push(<Tile value={0} key={4 * i + j} row={i} col={j} />);
+        tiles.push(<BlankTile row={i} col={j} key={4 * i + j} />);
       }
     }
 
@@ -451,6 +457,46 @@ const styles = StyleSheet.create({
   },
   gestureRecognizer: {
     height: "100%",
+    position: "absolute",
     width: "100%",
+  },
+  scores: {
+    alignContent: "center",
+    flex: 3,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  scoreBox: {
+    alignItems: "center",
+    backgroundColor: Colors.gameBackGround,
+    borderRadius: 5,
+    justifyContent: "space-evenly",
+    height: 50,
+  },
+  scoreLabel: {
+    color: Colors.lightText,
+    fontSize: 12,
+  },
+  scoreValue: {
+    color: Colors.lightText,
+    fontSize: 16,
+  },
+  title: {
+    alignItems: "flex-end",
+    flex: 2,
+    justifyContent: "center",
+  },
+  titleText: {
+    color: Colors.darkText,
+    fontSize: 60,
+    fontWeight: "bold",
+  },
+  topHalf: {
+    alignItems: "center",
+    flex: 3,
+    flexDirection: "row",
+  },
+  bottomHalf: {
+    flex: 7,
   },
 });

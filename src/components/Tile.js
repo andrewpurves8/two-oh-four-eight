@@ -4,22 +4,30 @@ import { Animated, StyleSheet, View, Text } from "react-native";
 import Colors from "./Colors";
 
 function AnimView(props) {
-  const anim = new Animated.Value(0);
+  const slideAnimation = new Animated.Value(0);
+  const fadeInAnimation = new Animated.Value(0);
 
-  Animated.timing(anim, {
-    toValue: 1,
-    duration: 200,
-    useNativeDriver: true,
-  }).start();
+  Animated.sequence([
+    Animated.timing(slideAnimation, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }),
+    Animated.timing(fadeInAnimation, {
+      toValue: 1,
+      duration: 75,
+      useNativeDriver: true,
+    }),
+  ]).start();
 
   return (
     <Animated.View
       style={{
         ...props.style,
-        opacity: props.isNew ? anim : 1,
+        opacity: props.isNew ? fadeInAnimation : 1,
         transform: [
           {
-            translateX: anim.interpolate({
+            translateX: slideAnimation.interpolate({
               inputRange: [0, 1],
               outputRange: [
                 77 * props.oldCol + 8.4 * (props.oldCol + 1),
@@ -28,7 +36,7 @@ function AnimView(props) {
             }),
           },
           {
-            translateY: anim.interpolate({
+            translateY: slideAnimation.interpolate({
               inputRange: [0, 1],
               outputRange: [
                 77 * props.oldRow + 8.4 * (props.oldRow + 1),
@@ -48,20 +56,14 @@ function Tile(props) {
   const value = props.value;
   const oldRow = props.row;
   const oldCol = props.col;
-  let row = props.row;
-  let col = props.col;
-  if (value != 0) {
-    row = props.newRow;
-    col = props.newCol;
-  }
+  const row = props.newRow;
+  const col = props.newCol;
   const isNew = props.isNew;
 
   let bgColor = Colors.blankTile;
 
-  if (value !== 0) {
-    const valueLog = Math.log2(value);
-    bgColor = Colors.tileColors[valueLog - 1];
-  }
+  const valueLog = Math.log2(value);
+  bgColor = Colors.tileColors[valueLog - 1];
 
   const textColor = value > 4 ? Colors.lightText : Colors.darkText;
 
@@ -75,9 +77,7 @@ function Tile(props) {
       value={value}
       isNew={isNew}
     >
-      <Text style={{ ...styles.text, color: textColor }}>
-        {value === 0 ? "" : value}
-      </Text>
+      <Text style={{ ...styles.text, color: textColor }}>{value}</Text>
     </AnimView>
   );
 }

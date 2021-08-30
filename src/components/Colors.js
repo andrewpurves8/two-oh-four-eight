@@ -1,8 +1,4 @@
 export default Colors = {
-  // charcoal: "#36454f",
-  // darkGrey: "#808080",
-  // lightGrey: "#a9a9a9",
-
   screenBackGround: "#faf8ef",
   gameBackGround: "#bbada0",
   blankTile: "#cdc1b4",
@@ -20,6 +16,6 @@ export default Colors = {
     "#edcc61",
     "#edc850",
     "#edc53f",
-    // "#",
+    "#edc22e",
   ],
 };
