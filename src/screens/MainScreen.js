@@ -1,12 +1,12 @@
 import React, { Component } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import GestureRecognizer from "react-native-swipe-gestures";
+import _ from "lodash";
 
+import AnimatedViewGameOver from "../components/AnimatedViewGameOver";
+import BlankTile from "../components/BlankTile";
 import Colors from "../components/Colors";
 import Tile from "../components/Tile";
-import BlankTile from "../components/BlankTile";
-
-import _ from "lodash";
 
 class MainScreen extends Component {
   state = {
@@ -90,16 +90,13 @@ class MainScreen extends Component {
       const gameWon = this.checkGameWon(newValues);
       this.addTile(newValues, nonZeroTiles);
       const gameLost = this.checkGameLost(newValues);
-      if (gameWon) {
-        console.log("Game won!");
-      } else if (gameLost) {
-        console.log("Game lost!");
-      }
       this.setState({
         ...this.state,
-        values: newValues,
+        gameLost: gameLost,
+        gameWon: gameWon,
         nonZeroTiles: nonZeroTiles,
         score: score,
+        values: newValues,
       });
     }
   }
@@ -114,7 +111,6 @@ class MainScreen extends Component {
   }
 
   onSwipe(gestureName, gestureState) {
-    console.log(gestureState);
     const { vx, vy, dx, dy } = gestureState;
     const dxAbs = Math.abs(dx);
     const dyAbs = Math.abs(dy);
@@ -436,6 +432,28 @@ class MainScreen extends Component {
       );
     }
 
+    if (this.state.gameLost)
+      tiles.push(
+        <AnimatedViewGameOver
+          style={{
+            ...styles.gameOver,
+            backgroundColor: Colors.blankTile,
+          }}
+          key={32}
+        >
+          <Text style={styles.gameOverText}>You lose!</Text>
+        </AnimatedViewGameOver>
+      );
+    else if (this.state.gameWon)
+      tiles.push(
+        <AnimatedViewGameOver
+          style={{ ...styles.gameOver, backgroundColor: Colors.tileColors[10] }}
+          key={32}
+        >
+          <Text style={styles.gameOverText}>You win!</Text>
+        </AnimatedViewGameOver>
+      );
+
     return tiles;
   }
 }
@@ -443,6 +461,9 @@ class MainScreen extends Component {
 export default MainScreen;
 
 const styles = StyleSheet.create({
+  bottomHalf: {
+    flex: 7,
+  },
   container: {
     alignItems: "center",
     backgroundColor: Colors.screenBackGround,
@@ -454,6 +475,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gameBackGround,
     borderRadius: 5,
     width: 350,
+  },
+  gameOver: {
+    alignItems: "center",
+    aspectRatio: 1,
+    borderRadius: 5,
+    justifyContent: "center",
+    width: 350,
+  },
+  gameOverText: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.black,
   },
   gestureRecognizer: {
     height: "100%",
@@ -495,8 +528,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 3,
     flexDirection: "row",
-  },
-  bottomHalf: {
-    flex: 7,
   },
 });

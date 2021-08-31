@@ -1,9 +1,10 @@
 export default Colors = {
-  screenBackGround: "#faf8ef",
-  gameBackGround: "#bbada0",
+  black: "#000000",
   blankTile: "#cdc1b4",
-  lightText: "#f9f6f2",
   darkText: "#776e65",
+  gameBackGround: "#bbada0",
+  lightText: "#f9f6f2",
+  screenBackGround: "#faf8ef",
 
   tileColors: [
     "#eee4da",
