@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import GestureRecognizer from "react-native-swipe-gestures";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import _ from "lodash";
 
 import AnimatedViewGameOver from "../components/AnimatedViewGameOver";
@@ -20,6 +21,7 @@ class MainScreen extends Component {
     ],
     nonZeroTiles: [],
     score: 0,
+    highScore: 0,
   };
 
   constructor(props) {
@@ -28,6 +30,8 @@ class MainScreen extends Component {
     let newNonZeroTiles = this.state.nonZeroTiles;
 
     for (let i = 0; i < 2; i++) this.addTile(newValues, newNonZeroTiles);
+
+    this.updateHighScore();
   }
 
   addTile(values, nonZeroTiles) {
@@ -85,7 +89,7 @@ class MainScreen extends Component {
     return false;
   }
 
-  postUpdate(newValues, oldValues, nonZeroTiles, score) {
+  postUpdate(newValues, oldValues, nonZeroTiles, score, highScore) {
     if (JSON.stringify(newValues) != JSON.stringify(oldValues)) {
       const gameWon = this.checkGameWon(newValues);
       this.addTile(newValues, nonZeroTiles);
@@ -96,6 +100,7 @@ class MainScreen extends Component {
         gameWon: gameWon,
         nonZeroTiles: nonZeroTiles,
         score: score,
+        highScore: highScore,
         values: newValues,
       });
     }
@@ -125,10 +130,31 @@ class MainScreen extends Component {
     }
   }
 
+  saveHighScore = async (highScore) => {
+    try {
+      await AsyncStorage.setItem("high_score", highScore.toString());
+    } catch (e) {
+      console.log("Error saving high score");
+    }
+  };
+
+  updateHighScore = async () => {
+    let highScore = 0;
+    try {
+      const highScoreString = await AsyncStorage.getItem("high_score");
+      if (highScoreString != null) highScore = parseInt(highScoreString);
+    } catch (e) {
+      console.log("Error updating high score");
+    }
+
+    this.setState({ ...this.state, highScore: highScore });
+  };
+
   onSwipeUp() {
     let newValues = _.cloneDeep(this.state.values);
     let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
     let newScore = this.state.score;
+    let newHighScore = this.state.highScore;
 
     this.preUpdate(newNonZeroTiles);
 
@@ -138,7 +164,11 @@ class MainScreen extends Component {
         if (newValues[j][i] !== 0 && newValues[j][i] === newValues[j + 1][i]) {
           newValues[j][i] *= 2;
           newValues[j + 1][i] = 0;
-          newScore = newValues[j][i];
+          newScore += newValues[j][i];
+          if (newScore > this.state.highScore) {
+            newHighScore = newScore;
+            this.saveHighScore(newScore);
+          }
 
           let topTile, bottomTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
@@ -158,13 +188,20 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
+    this.postUpdate(
+      newValues,
+      this.state.values,
+      newNonZeroTiles,
+      newScore,
+      newHighScore
+    );
   }
 
   onSwipeDown() {
     let newValues = _.cloneDeep(this.state.values);
     let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
     let newScore = this.state.score;
+    let newHighScore = this.state.highScore;
 
     this.preUpdate(newNonZeroTiles);
 
@@ -174,7 +211,11 @@ class MainScreen extends Component {
         if (newValues[j][i] !== 0 && newValues[j][i] === newValues[j - 1][i]) {
           newValues[j][i] *= 2;
           newValues[j - 1][i] = 0;
-          newScore = newValues[j][i];
+          newScore += newValues[j][i];
+          if (newScore > this.state.highScore) {
+            newHighScore = newScore;
+            this.saveHighScore(newScore);
+          }
 
           let topTile, bottomTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
@@ -194,13 +235,20 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
+    this.postUpdate(
+      newValues,
+      this.state.values,
+      newNonZeroTiles,
+      newScore,
+      newHighScore
+    );
   }
 
   onSwipeLeft() {
     let newValues = _.cloneDeep(this.state.values);
     let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
     let newScore = this.state.score;
+    let newHighScore = this.state.highScore;
 
     this.preUpdate(newNonZeroTiles);
 
@@ -210,7 +258,11 @@ class MainScreen extends Component {
         if (newValues[i][j] !== 0 && newValues[i][j] === newValues[i][j + 1]) {
           newValues[i][j] *= 2;
           newValues[i][j + 1] = 0;
-          newScore = newValues[i][j];
+          newScore += newValues[i][j];
+          if (newScore > this.state.highScore) {
+            newHighScore = newScore;
+            this.saveHighScore(newScore);
+          }
 
           let leftTile, rightTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
@@ -230,13 +282,20 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
+    this.postUpdate(
+      newValues,
+      this.state.values,
+      newNonZeroTiles,
+      newScore,
+      newHighScore
+    );
   }
 
   onSwipeRight() {
     let newValues = _.cloneDeep(this.state.values);
     let newNonZeroTiles = _.cloneDeep(this.state.nonZeroTiles);
     let newScore = this.state.score;
+    let newHighScore = this.state.highScore;
 
     this.preUpdate(newNonZeroTiles);
 
@@ -246,7 +305,11 @@ class MainScreen extends Component {
         if (newValues[i][j] !== 0 && newValues[i][j] === newValues[i][j - 1]) {
           newValues[i][j] *= 2;
           newValues[i][j - 1] = 0;
-          newScore = newValues[i][j];
+          newScore += newValues[i][j];
+          if (newScore > this.state.highScore) {
+            newHighScore = newScore;
+            this.saveHighScore(newScore);
+          }
 
           let leftTile, rightTile;
           for (let k = 0; k < newNonZeroTiles.length; k++) {
@@ -266,7 +329,13 @@ class MainScreen extends Component {
         }
       }
     }
-    this.postUpdate(newValues, this.state.values, newNonZeroTiles, newScore);
+    this.postUpdate(
+      newValues,
+      this.state.values,
+      newNonZeroTiles,
+      newScore,
+      newHighScore
+    );
   }
 
   shiftUp(values, column, nonZeroTiles) {
@@ -396,7 +465,7 @@ class MainScreen extends Component {
               <View style={{ width: 10 }} />
               <View style={{ ...styles.scoreBox, width: 90 }}>
                 <Text style={styles.scoreLabel}>HIGH SCORE</Text>
-                <Text style={styles.scoreValue}>123456</Text>
+                <Text style={styles.scoreValue}>{this.state.highScore}</Text>
               </View>
             </View>
           </View>
