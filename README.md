@@ -1,4 +1,4 @@
-# TwoOhFourEight
+# 2048
 
 React Native version of the game 2048.
 
